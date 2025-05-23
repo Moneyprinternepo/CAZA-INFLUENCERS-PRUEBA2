@@ -1,0 +1,467 @@
+:root {
+  --primary: #ef4444;
+  --primary-dark: #7f1d1d;
+  --bg-dark: #111;
+  --bg-light: #181818; /* Un poco más claro para el fondo de página */
+  --bg-card: #1f1f1f;
+  --bg-input: #2d2d2d;
+  --text: #fff;
+  --text-secondary: #aaa;
+  --border: #444;
+  --success: #22c55e;
+  --error: #f87171;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: var(--bg-light);
+  color: var(--text);
+  padding: 0; /* Sin padding general en body, se añade a contenedores */
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* --- LOGIN PAGE STYLES --- */
+.login-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: var(--bg-dark); /* Fondo oscuro para la página de login */
+}
+
+.login-container {
+  background: var(--bg-card);
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  padding: 30px 40px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.login-container .logo {
+  display: block;
+  margin: 0 auto 25px;
+  height: 60px;
+}
+
+.login-container h2 {
+  font-size: 2rem;
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 25px;
+}
+
+.login-container .input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.login-container label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.login-container input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.login-container button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  border-radius: 5px;
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 15px;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+}
+
+.login-container button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.login-container .error-message {
+  color: var(--error);
+  font-size: 0.9rem;
+  margin-top: 15px;
+  text-align: center;
+  display: none; /* Se muestra con JS */
+}
+
+.status-message { /* Para mensajes de carga o éxito */
+  padding: 10px 15px;
+  background: var(--bg-input);
+  border-left: 4px solid var(--primary);
+  color: var(--text);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 15px;
+  text-align: center;
+}
+
+
+/* --- MAIN APP STYLES (INDEX.HTML, INFLUENCER_METRICS.HTML) --- */
+header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-top: 20px;
+}
+
+header h1 {
+  font-size: 2.8rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 20px;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header .logos img {
+  height: 50px;
+  margin-right: 15px;
+}
+.app-header .user-info {
+    display: flex;
+    align-items: center;
+}
+.app-header .user-info span {
+    margin-right: 15px;
+    color: var(--text-secondary);
+}
+
+.logout-btn {
+  padding: 8px 15px;
+  background: var(--primary);
+  color: var(--text);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background .3s;
+}
+.logout-btn:hover {
+  background: var(--primary-dark);
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.tab {
+  padding: 12px 25px;
+  border-radius: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: background .3s, border-color .3s;
+  font-size: 1rem;
+}
+.tab:hover {
+  background: #2a2a2a;
+  border-color: var(--primary-dark);
+}
+.tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  padding: 20px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--primary);
+  margin-bottom: 30px;
+}
+
+select, input[type="text"], input[type="password"], input[type="email"] { /* Estilo global para inputs */
+  padding: 10px;
+  border-radius: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.95rem;
+  width: 100%;
+}
+select:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="email"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+
+.search-btn {
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.95rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.search-btn:disabled {
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 25px;
+}
+
+.result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  padding: 20px;
+  cursor: pointer;
+  transition: background .3s, transform 0.2s;
+  text-decoration: none; /* Para que la tarjeta sea un link */
+  color: var(--text); /* Asegurar que el texto dentro del link sea visible */
+}
+.result-card:hover {
+  background: #2a2a2a;
+  transform: translateY(-5px);
+  border-color: var(--primary-dark);
+}
+.result-card h3 {
+  font-size: 1.3rem;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+.result-card p {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+}
+.text-secondary {
+  color: var(--text-secondary);
+}
+.text-impact {
+  color: var(--success);
+  font-weight: bold;
+}
+
+/* --- INFLUENCER METRICS PAGE --- */
+.detail-view {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 30px;
+  margin-top: 20px;
+}
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  margin-bottom: 25px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid var(--border);
+}
+.avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  object-fit: cover;
+}
+.detail-header-info h2 {
+  font-size: 2.2rem;
+  color: var(--primary);
+  margin-bottom: 5px;
+}
+.detail-header-info p {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.back-btn {
+  display: inline-block; /* Para que el margin-top funcione bien */
+  color: var(--primary);
+  background: none;
+  border: 1px solid var(--primary);
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-top: 20px;
+  margin-bottom: 30px; /* Espacio antes de los charts */
+  font-weight: bold;
+  transition: background .3s, color .3s;
+}
+.back-btn:hover {
+  background: var(--primary);
+  color: var(--text);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 15px 0;
+}
+.tag {
+  background: var(--bg-input);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+}
+
+.charts-section-title {
+  font-size: 1.5rem;
+  color: var(--primary);
+  margin-top: 30px;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+.chart-container {
+  background: #2a2a2a;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+.chart-title {
+  font-size: 1rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* --- CAMPAIGN VIEW --- */
+.campaign-view {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 30px;
+}
+.campaign-view h2.section-title { /* Estilo específico para el H2 de campaña */
+    color:var(--primary);
+    margin-bottom:20px;
+    font-size: 1.8rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+}
+#campaign-data h3 { /* Nombre de la campaña */
+    font-size: 1.5rem;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+#campaign-data p {
+    margin-bottom: 8px;
+    font-size: 1rem;
+}
+
+.hidden {
+  display: none !important; /* Forzar ocultación */
+}
+
+.loader {
+  border: 6px solid var(--bg-input);
+  border-top: 6px solid var(--primary);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+  margin: 40px auto; /* Centrar y dar espacio */
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+  .results-grid {
+    grid-template-columns: 1fr;
+  }
+  .detail-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  .avatar {
+    width: 120px;
+    height: 120px;
+  }
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+  .app-header .logos {
+    display: none; /* Ocultar logos en móvil para ahorrar espacio */
+  }
+  .app-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

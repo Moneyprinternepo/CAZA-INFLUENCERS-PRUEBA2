@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas del Influencer - Caza Influencers</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!--  📦 Dependencias  -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.3.0/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+             <div class="logos">
+                <img src="https://images.mediapro.es/generic/companies/logo_geca.png" alt="Logo Geca" />
+             </div>
+             <div class="user-info">
+                <span id="username-display-metrics"></span>
+                <!-- Podrías añadir un logout aquí también o un link a index -->
+             </div>
+        </header>
+        
+        <div id="loader-metrics" class="loader"></div>
+        <div id="metrics-content" class="hidden">
+            <a href="index.html" class="back-btn">← Volver a la Lista</a>
+            
+            <div class="detail-view">
+                <div class="detail-header">
+                    <img src="https://placehold.co/150x150/ef4444/ffffff?text=N" class="avatar" alt="Avatar del Influencer" id="influencer-avatar">
+                    <div class="detail-header-info">
+                        <h2 id="influencer-name">Nombre del Influencer</h2>
+                        <p class="text-secondary" id="influencer-platform-followers">Plataforma • Seguidores</p>
+                        <p id="influencer-likes-comments">❤️ Likes • 💬 Comentarios</p>
+                        <p class="text-impact" id="influencer-impact">📊 Impacto</p>
+                    </div>
+                </div>
+                
+                <h3 class="charts-section-title" style="margin-top: 10px; font-size: 1.2rem;">Nichos Principales</h3>
+                <div class="tags" id="influencer-tags">
+                    <!-- Tags se insertarán aquí -->
+                </div>
+
+                <h3 class="charts-section-title">Métricas de Audiencia (Ejemplo)</h3>
+                <div class="charts-row">
+                    <div class="chart-container">
+                        <div class="chart-title">Distribución por Plataforma Cruzada</div>
+                        <canvas id="platform-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title">Distribución por Edad</div>
+                        <canvas id="age-chart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container" style="margin-top:25px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    <div class="chart-title">Distribución por Género</div>
+                    <canvas id="gender-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <p id="error-message-metrics" class="hidden" style="text-align: center; margin-top: 20px; font-size: 1.1rem; color: var(--error);"></p>
+    </div>
+    <script src="js/metrics.js"></script>
+</body>
+</html>
