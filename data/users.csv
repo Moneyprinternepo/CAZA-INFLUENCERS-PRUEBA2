@@ -1,5 +1,6 @@
-username,password
-admin,admin123
-marca1,marca1pass
-analista,analista123
-ClauPerrera,Sinseryonadadeeso
+id,username,password,role
+1,admin,admin123,administrator
+2,marca1,marca1pass,client
+3,analista,analista123,analyst
+4,Filmax,PolCrack,client
+5,ClauPerrera,Lentejas,analyst
