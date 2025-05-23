@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let csvLoaded = false;
 
     let currentCampaignData = { // Datos de campaña por defecto / iniciales
-        id: 1, name: "Dinosaurios de la Patagonia", brand: "Caixa", date: "2025-03-10", influencer_ids: ["1","2"], // IDs como strings para coincidir con CSV
+        id: 1, name: "Dinosaurios de la Patagonia", brand: "Caixa", date: "2025-03-10", influencer_ids: ["1","2"], // IDs como strings
         roi: 2.3,
         stats: [
             { month: 'Ene', engagement: 20000, views: 30000 }, { month: 'Feb', engagement: 10000, views: 12000 },
@@ -37,41 +37,36 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
-    // Elementos del DOM
-    const tabsNodeList = document.querySelectorAll('.tab'); // Renombrado para evitar conflicto
-    const exploreViewDiv = document.getElementById('explore-view'); // Renombrado
-    const campaignViewDiv = document.getElementById('campaign-view'); // Renombrado
-    const resultsContainerDiv = document.getElementById('results-container'); // Renombrado
-    const loaderDiv = document.getElementById('loader'); // Renombrado
-    const noResultsMessageP = document.getElementById('no-results-message'); // Renombrado
+    // Elementos del DOM (asegúrate que los IDs en tu HTML coincidan)
+    const tabsNodeList = document.querySelectorAll('.tab');
+    const exploreViewDiv = document.getElementById('explore-view');
+    const campaignViewDiv = document.getElementById('campaign-view');
+    const resultsContainerDiv = document.getElementById('results-container');
+    const loaderDiv = document.getElementById('loader');
+    const noResultsMessageP = document.getElementById('no-results-message');
     
-    const platformFilterSelect = document.getElementById('platform-filter'); // Renombrado
-    const followersFilterSelect = document.getElementById('followers-filter'); // Renombrado
-    const tag1FilterSelect = document.getElementById('tag1-filter'); // Renombrado
-    const tag2FilterSelect = document.getElementById('tag2-filter'); // Renombrado
-    const searchInputEl = document.getElementById('search-input'); // Renombrado
-    const searchBtnEl = document.getElementById('search-btn'); // Renombrado
+    const platformFilterSelect = document.getElementById('platform-filter');
+    const followersFilterSelect = document.getElementById('followers-filter');
+    const tag1FilterSelect = document.getElementById('tag1-filter');
+    const tag2FilterSelect = document.getElementById('tag2-filter');
+    const searchInputEl = document.getElementById('search-input');
+    const searchBtnEl = document.getElementById('search-btn');
 
-    const campaignFormEl = document.getElementById('campaign-form'); // Renombrado
-    const formCampaignStatsTextareaEl = document.getElementById('form-campaign-stats'); // Renombrado
+    const campaignFormEl = document.getElementById('campaign-form');
+    const formCampaignStatsTextareaEl = document.getElementById('form-campaign-stats');
 
 
     function initializeCampaignForm() {
         document.getElementById('form-campaign-name').value = currentCampaignData.name;
         document.getElementById('form-campaign-brand').value = currentCampaignData.brand;
-        
-        // Formatear la fecha para el input type="date" que espera YYYY-MM-DD
         let campaignDate = currentCampaignData.date;
-        if (campaignDate && campaignDate.includes('T')) { // Si es un ISO string completo
+        if (campaignDate && campaignDate.includes('T')) {
             campaignDate = campaignDate.split('T')[0];
-        } else if (campaignDate && campaignDate.includes('/')) { // Si es DD/MM/YYYY o similar
+        } else if (campaignDate && campaignDate.includes('/')) {
             const parts = campaignDate.split('/');
-            if (parts.length === 3) {
-                campaignDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-            }
-        } // Asumir que si no, ya está en YYYY-MM-DD
+            if (parts.length === 3) campaignDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+        }
         document.getElementById('form-campaign-date').value = campaignDate;
-
         document.getElementById('form-campaign-influencers-ids').value = currentCampaignData.influencer_ids.join(',');
         document.getElementById('form-campaign-roi').value = currentCampaignData.roi;
         formCampaignStatsTextareaEl.value = JSON.stringify(currentCampaignData.stats, null, 2);
@@ -93,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const influencer_ids = influencer_ids_str.split(',').map(id => id.trim()).filter(id => id !== "");
-            
             let stats;
             try {
                 stats = JSON.parse(stats_json);
@@ -104,11 +98,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert(`Error en el formato JSON de Datos Mensuales: ${jsonError.message}`);
                 return;
             }
-
             currentCampaignData = { name, brand, date, influencer_ids, roi, stats };
             displayCampaignData(currentCampaignData);
             alert("Datos de campaña actualizados y gráfica regenerada.");
-
         } catch (error) {
             alert(`Error procesando el formulario: ${error.message}`);
             console.error("Error en formulario de campaña:", error);
@@ -116,12 +108,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function displayCampaignData(campaignToDisplay = currentCampaignData) {
-        if (!csvLoaded && currentData.length === 0) { // Solo reintentar si currentData está vacío, no solo si csvLoaded es false (podría estar en proceso)
+        if (!csvLoaded && currentData.length === 0) {
             document.getElementById('no-campaign-message').textContent = 'Cargando datos de influencers para la campaña...';
             setTimeout(() => displayCampaignData(campaignToDisplay), 1000);
             return;
         }
-        
         if (!campaignToDisplay || !campaignToDisplay.stats || campaignToDisplay.stats.length === 0) {
             document.getElementById('no-campaign-message').textContent = 'No hay datos de campaña para mostrar. Por favor, usa el formulario.';
             document.getElementById('no-campaign-message').classList.remove('hidden');
@@ -131,11 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('no-campaign-message').classList.add('hidden');
         document.getElementById('campaign-data').classList.remove('hidden');
-
         document.getElementById('campaign-name').textContent = campaignToDisplay.name;
         document.getElementById('campaign-brand').textContent = campaignToDisplay.brand;
         try {
-            // Asegurar que la fecha se parsee correctamente, asumiendo YYYY-MM-DD del input
             const [year, month, day] = campaignToDisplay.date.split('-');
             document.getElementById('campaign-date').textContent = new Date(year, month - 1, day).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
         } catch (e) {
@@ -199,25 +188,24 @@ document.addEventListener('DOMContentLoaded', () => {
     function populateTagFilters() {
         tag1FilterSelect.length = 1; 
         tag2FilterSelect.length = 1;
+        console.log("Poblando filtros de tags con currentData de longitud:", currentData.length);
         
-        // Combinar nichos de todas las columnas de nicho y asegurarse de que sean strings antes de split
         const allNiches = currentData.flatMap(item => {
-            let niches = [];
-            if (item.niche && typeof item.niche === 'string') niches = niches.concat(item.niche.split('|').map(s => s.trim()).filter(s => s));
-            if (item['niche 2'] && typeof item['niche 2'] === 'string') niches = niches.concat(item['niche 2'].split('|').map(s => s.trim()).filter(s => s));
-            if (item['niche 3'] && typeof item['niche 3'] === 'string') niches = niches.concat(item['niche 3'].split('|').map(s => s.trim()).filter(s => s));
-            // Si tus columnas de nicho ya son arrays después del parseo, ajusta esto.
-            // Por ahora, asumimos que son strings o PapaParse podría haberlos convertido a arrays si no hay delimitador interno.
-            // Pero si el CSV tiene 'Minecraft;Videojuegos;Familiar' y el delimitador principal es ';', 'niche' será 'Minecraft', 'niche 2' será 'Videojuegos', etc.
-            // Así que vamos a asumir que las columnas son individuales.
             const individualNiches = [];
-            if (item.niche && typeof item.niche === 'string') individualNiches.push(item.niche.trim());
-            if (item['niche 2'] && typeof item['niche 2'] === 'string') individualNiches.push(item['niche 2'].trim());
-            if (item['niche 3'] && typeof item['niche 3'] === 'string') individualNiches.push(item['niche 3'].trim());
-            return individualNiches.filter(n => n); // Solo nichos no vacíos
+            if (!item) return [];
+
+            if (item.niche1 && typeof item.niche1 === 'string' && item.niche1.trim() !== '') individualNiches.push(item.niche1.trim());
+            if (item.niche2 && typeof item.niche2 === 'string' && item.niche2.trim() !== '') individualNiches.push(item.niche2.trim());
+            if (item.niche3 && typeof item.niche3 === 'string' && item.niche3.trim() !== '') individualNiches.push(item.niche3.trim());
+            if (item.niche4 && typeof item.niche4 === 'string' && item.niche4.trim() !== '') individualNiches.push(item.niche4.trim());
+            if (item.niche5 && typeof item.niche5 === 'string' && item.niche5.trim() !== '') individualNiches.push(item.niche5.trim());
+            
+            return individualNiches;
         });
+        // console.log("Todos los nichos recolectados (antes de Set):", allNiches.length, allNiches.slice(0,20));
 
         const uniqueTags = [...new Set(allNiches)].sort();
+        console.log("Tags únicos para filtros:", uniqueTags.length, uniqueTags); // Log todos los tags únicos
         
         uniqueTags.forEach(tag => {
             if (tag) { 
@@ -227,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 tag2FilterSelect.appendChild(option2);
             }
         });
+        console.log("Filtros de tags poblados.");
     }
     
     function showLoader(show) {
@@ -235,72 +224,107 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadInfluencersCsv() {
         showLoader(true);
+        console.log("Iniciando loadInfluencersCsv...");
         try {
             const response = await fetch('data/influencers.csv');
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            console.log("Respuesta de fetch para influencers.csv:", response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}, ${response.statusText} al intentar cargar data/influencers.csv`);
+            }
             const csvText = await response.text();
+            // console.log("CSV texto obtenido (primeros 500 chars):", csvText.substring(0, 500));
             
             return new Promise((resolve, reject) => {
                 Papa.parse(csvText, {
                     header: true,
-                    dynamicTyping: true,
+                    dynamicTyping: false, // Controlar tipos manualmente
                     skipEmptyLines: true,
-                    delimiter: ";", // <--- IMPORTANTE: Especificar el delimitador
+                    // delimiter: ";", // <--- ELIMINADO: PapaParse usa coma por defecto
+                    transformHeader: function(header) {
+                        return header.trim(); 
+                    },
                     complete: ({ data, errors, meta }) => {
-                        if (errors.length > 0) {
-                            console.warn("Errores de parseo en influencers.csv detectados:");
-                            errors.forEach(err => console.warn(`- Tipo: ${err.type}, Código: ${err.code}, Mensaje: ${err.message}, Fila: ${err.row}`));
-                        }
-                        console.log("Campos detectados por PapaParse:", meta.fields);
+                        console.log("Papa.parse completado para influencers.csv.");
+                        console.log("Campos detectados por PapaParse (meta.fields):", meta.fields);
 
+                        if (errors.length > 0) {
+                            console.warn("ERRORES de parseo en influencers.csv:");
+                            errors.forEach(err => console.warn(`- Tipo: ${err.type}, Código: ${err.code}, Mensaje: ${err.message}, Fila original CSV: ${err.row + 2}`));
+                        }
+                        
                         const rawDataCount = data.length;
+                        console.log("Número de filas parseadas por PapaParse (antes de filtrar):", rawDataCount);
+
                         currentData = data.filter(r => {
                             const hasId = r && (r.id !== null && r.id !== undefined && String(r.id).trim() !== "");
                             const hasName = r && (r.name !== null && r.name !== undefined && String(r.name).trim() !== "");
                             return hasId && hasName;
                         });
-                        console.log(`Datos CSV: ${rawDataCount} filas crudas, ${currentData.length} filas válidas cargadas.`);
+                        console.log(`Número de filas en currentData (después de filtrar por ID/Nombre): ${currentData.length}`);
+
+                        if (currentData.length > 0) {
+                            // console.log("Propiedades del primer item ANTES de procesar tipos (keys):", Object.keys(currentData[0]));
+                        }
 
                         currentData.forEach(item => {
-                            item.id = String(item.id); // ID como string consistentemente
-                            item.followers = Number(item.followers) || 0;
-                            item.likesAvg = Number(item.likesAvg) || 0;
-                            item.commentsAvg = Number(item.commentsAvg) || 0;
-                            // Para los nichos, como ahora son columnas separadas, los dejamos como están.
-                            // La función populateTagFilters y applyFiltersAndSearch se encargarán de leerlos.
+                            item.id = String(item.id || '').trim();
+                            item.name = String(item.name || '').trim();
+                            item.platform = String(item.platform || 'N/A').trim();
+                            // Eliminar cualquier carácter no numérico antes de convertir a número
+                            item.followers = parseInt(String(item.followers || '0').replace(/\D/g,''), 10) || 0;
+                            item.likesAvg = parseInt(String(item.likesAvg || '0').replace(/\D/g,''), 10) || 0;
+                            item.commentsAvg = parseInt(String(item.commentsAvg || '0').replace(/\D/g,''), 10) || 0;
+                            
+                            item.niche1 = String(item.niche1 || '').trim();
+                            item.niche2 = String(item.niche2 || '').trim();
+                            item.niche3 = String(item.niche3 || '').trim();
+                            item.niche4 = String(item.niche4 || '').trim();
+                            item.niche5 = String(item.niche5 || '').trim();
                         });
+                        
+                        if (currentData.length > 0) {
+                            // console.log("Primer item en currentData DESPUÉS de procesar tipos:", currentData[0]);
+                        } else {
+                            console.warn("currentData está vacío después del procesamiento. Revisa el CSV y los logs de errores de parseo.");
+                        }
 
                         csvLoaded = true;
-                        filteredData = [...currentData]; // Inicializar filteredData
+                        filteredData = [...currentData];
                         populateTagFilters();
                         searchBtnEl.disabled = false;
                         showLoader(false);
-                        applyFiltersAndSearch();
+                        applyFiltersAndSearch(); 
+                        console.log("loadInfluencersCsv completado exitosamente.");
                         resolve();
                     },
                     error: (error) => {
-                        console.error("Error de PapaParse:", error);
+                        console.error("ERROR CRÍTICO en PapaParse:", error);
+                        showLoader(false);
+                        resultsContainerDiv.innerHTML = `<p style="color:var(--error); text-align:center;">Error parseando influencers.csv: ${error.message}.</p>`;
                         reject(error.message);
                     }
                 });
             });
         } catch (error) {
+            console.error('ERROR CRÍTICO en fetch o previo a PapaParse:', error.message);
             showLoader(false);
-            resultsContainerDiv.innerHTML = `<p style="color:var(--error); text-align:center;">Error cargando influencers.csv: ${error.message}. Por favor, revisa la consola y el archivo.</p>`;
-            console.error('Error crítico cargando influencers.csv:', error);
+            resultsContainerDiv.innerHTML = `<p style="color:var(--error); text-align:center;">Error cargando influencers.csv: ${error.message}.</p>`;
             searchBtnEl.disabled = true;
-            throw error;
         }
     }
     
     function applyFiltersAndSearch() {
-        if (!csvLoaded) return;
+        if (!csvLoaded) {
+            // console.log("applyFiltersAndSearch: CSV no cargado aún.");
+            return;
+        }
+        // console.log("Aplicando filtros...");
 
         showLoader(true);
         resultsContainerDiv.classList.add('hidden');
         noResultsMessageP.classList.add('hidden');
 
-        setTimeout(() => {
+        setTimeout(() => { // Simular delay para UX, aunque puede ser muy corto
             const platform = platformFilterSelect.value;
             const followersRange = followersFilterSelect.value;
             const tag1 = tag1FilterSelect.value;
@@ -308,21 +332,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchTerm = searchInputEl.value.toLowerCase().trim();
 
             filteredData = currentData.filter(item => {
+                if (!item || !item.id) return false; 
+
                 if (platform !== 'Todos' && item.platform !== platform) return false;
 
-                const followers = Number(item.followers) || 0;
+                const followers = item.followers; // Ya es número
                 if (followersRange === '<100K' && followers >= 100000) return false;
                 if (followersRange === '100K-500K' && (followers < 100000 || followers > 500000)) return false;
                 if (followersRange === '>500K' && followers <= 500000) return false;
 
-                // Lógica de filtrado para nichos individuales
                 const itemNichesSet = new Set();
-                if (item.niche && typeof item.niche === 'string') itemNichesSet.add(item.niche.trim());
-                if (item['niche 2'] && typeof item['niche 2'] === 'string') itemNichesSet.add(item['niche 2'].trim());
-                if (item['niche 3'] && typeof item['niche 3'] === 'string') itemNichesSet.add(item['niche 3'].trim());
+                if (item.niche1) itemNichesSet.add(item.niche1);
+                if (item.niche2) itemNichesSet.add(item.niche2);
+                if (item.niche3) itemNichesSet.add(item.niche3);
+                if (item.niche4) itemNichesSet.add(item.niche4);
+                if (item.niche5) itemNichesSet.add(item.niche5);
+                // Eliminar entradas vacías que podrían haberse colado si un nicho era ""
+                itemNichesSet.delete("");
+
 
                 if (tag1 !== 'Todos' && !itemNichesSet.has(tag1)) return false;
-                if (tag2 !== 'Todos' && !itemNichesSet.has(tag2)) return false; // Si tag2 es el mismo que tag1, el filtro es más restrictivo. Considerar si esto es deseado.
+                if (tag2 !== 'Todos' && tag2 !== tag1 && !itemNichesSet.has(tag2)) return false;
                 
                 if (searchTerm) {
                     const nameMatch = item.name && item.name.toLowerCase().includes(searchTerm);
@@ -332,15 +362,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 return true;
             });
             
+            // console.log("Número de resultados después de filtrar:", filteredData.length);
             displayResults();
             showLoader(false);
             resultsContainerDiv.classList.remove('hidden');
             noResultsMessageP.classList.toggle('hidden', filteredData.length === 0);
-        }, 300);
+        }, 50); // Reducido el timeout
     }
     
     function displayResults() {
         resultsContainerDiv.innerHTML = '';
+        // console.log("displayResults llamado con filteredData de longitud:", filteredData.length);
+
         if (filteredData.length === 0) {
             noResultsMessageP.classList.remove('hidden');
             return;
@@ -348,23 +381,27 @@ document.addEventListener('DOMContentLoaded', () => {
         noResultsMessageP.classList.add('hidden');
 
         filteredData.forEach(item => {
+            if (!item || typeof item.id === 'undefined' || item.id === '') { // Chequeo más estricto del ID
+                console.warn("Intentando mostrar item inválido o sin ID válido:", item);
+                return; 
+            }
             const impact = calculateImpact(item);
             
             const card = document.createElement('a'); 
             card.className = 'result-card';
-            // Asegurarse que item.id es un string o número válido para la URL
-            card.href = `influencer_metrics.html?id=${encodeURIComponent(String(item.id))}`; 
+            card.href = `influencer_metrics.html?id=${encodeURIComponent(item.id)}`;
             
             card.innerHTML = `
                 <h3>${item.name || 'Nombre no disponible'}</h3>
                 <p class="text-secondary">${item.platform || 'N/A'}</p>
-                <p>👥 Seguidores: ${(Number(item.followers) || 0).toLocaleString()}</p>
-                <p>❤️ Likes (promedio): ${(Number(item.likesAvg) || 0).toLocaleString()}</p>
-                <p>💬 Comentarios (promedio): ${(Number(item.commentsAvg) || 0).toLocaleString()}</p>
+                <p>👥 Seguidores: ${(item.followers || 0).toLocaleString()}</p>
+                <p>❤️ Likes (promedio): ${(item.likesAvg || 0).toLocaleString()}</p>
+                <p>💬 Comentarios (promedio): ${(item.commentsAvg || 0).toLocaleString()}</p>
                 <p class="text-impact">📊 Impacto Estimado: ${impact}%</p>
             `;
             resultsContainerDiv.appendChild(card);
         });
+        // console.log("Tarjetas de resultados generadas.");
     }
 
     function handleTabClick(e) {
@@ -384,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    // Inicialización
+    // Inicialización de Listeners
     searchBtnEl.addEventListener('click', applyFiltersAndSearch);
     searchInputEl.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') applyFiltersAndSearch();
@@ -392,22 +429,21 @@ document.addEventListener('DOMContentLoaded', () => {
     [platformFilterSelect, followersFilterSelect, tag1FilterSelect, tag2FilterSelect].forEach(filterElement => {
         filterElement.addEventListener('change', applyFiltersAndSearch);
     });
-    
     tabsNodeList.forEach(t => t.addEventListener('click', handleTabClick));
 
+    // Carga inicial de datos
     loadInfluencersCsv()
         .then(() => {
-            console.log("Aplicación Caza Influencers inicializada.");
-            // Si la pestaña por defecto es campañas, o para la primera carga:
+            console.log("Aplicación Caza Influencers inicializada y CSV cargado.");
             const activeTab = document.querySelector('.tab.active');
-            if (activeTab && activeTab.dataset.tab === 'campanas') {
+            if (activeTab && activeTab.dataset.tab === 'campanas') { // Si la pestaña activa por defecto es campañas
                  initializeCampaignForm();
                  displayCampaignData(currentCampaignData);
-            } else {
-                // La vista de explorar ya se puebla a través de applyFiltersAndSearch llamado en loadInfluencersCsv
             }
+            // La vista explorar ya se puebla con applyFiltersAndSearch() llamado desde loadInfluencersCsv()
         })
         .catch(error => {
-            console.error("Fallo en la inicialización de la aplicación:", error);
+            console.error("Fallo mayor en la inicialización de la aplicación:", error);
+            // Mensajes de error ya deberían estar en la UI desde loadInfluencersCsv
         });
 });
