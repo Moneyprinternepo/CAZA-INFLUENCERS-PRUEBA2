@@ -411,9 +411,3 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Fallo en la inicialización de la aplicación:", error);
         });
 });
-        })
-        .catch(error => {
-            console.error("Fallo en la inicialización de la aplicación:", error);
-            // El error ya se muestra en la UI desde loadInfluencersCsv
-        });
-});
