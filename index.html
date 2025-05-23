@@ -49,19 +49,53 @@
 
     <!--  VISTA CAMPAÑAS  -->
     <div id="campaign-view" class="campaign-view hidden">
-      <h2 class="section-title">Tus Campañas</h2>
-      <div id="campaign-data" class="hidden"> <!-- Se mostrará cuando haya datos de campaña -->
-        <h3 id="campaign-name">Nombre de la campaña</h3>
-        <p class="text-secondary">Marca: <span id="campaign-brand"></span> • Fecha: <span id="campaign-date"></span></p>
-        <p>🎯 Influencers: <span id="campaign-influencers"></span></p>
-        <p>👥 Alcance Total Estimado: <span id="campaign-reach"></span></p>
-        <p>📈 ROI Estimado: <span id="campaign-roi" class="text-impact"></span></p>
-        <div class="chart-container" style="margin-top:25px; background: var(--bg-card);">
-            <div class="chart-title">Rendimiento Mensual de la Campaña</div>
-            <canvas id="campaign-chart"></canvas>
+        <h2 class="section-title">Tus Campañas</h2>
+
+        <!-- Formulario para crear/actualizar campaña -->
+        <form id="campaign-form" style="margin-bottom: 30px; padding: 20px; background: var(--bg-input); border-radius: 8px;">
+            <h3 style="color: var(--primary); margin-bottom: 15px;">Configurar Datos de Campaña</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            <div>
+                <label for="form-campaign-name">Nombre Campaña:</label>
+                <input type="text" id="form-campaign-name" value="Dinosaurios de la Patagonia">
+            </div>
+            <div>
+                <label for="form-campaign-brand">Marca:</label>
+                <input type="text" id="form-campaign-brand" value="Caixa">
+            </div>
+            <div>
+                <label for="form-campaign-date">Fecha (YYYY-MM-DD):</label>
+                <input type="date" id="form-campaign-date" value="2025-03-10">
+            </div>
+            <div>
+                <label for="form-campaign-influencers-ids">IDs Influencers (separados por coma):</label>
+                <input type="text" id="form-campaign-influencers-ids" value="1,2">
+            </div>
+            <div>
+                <label for="form-campaign-roi">ROI (ej: 2.3):</label>
+                <input type="number" step="0.1" id="form-campaign-roi" value="2.3">
+            </div>
+            </div>
+            <div style="margin-top: 15px;">
+            <label for="form-campaign-stats">Datos Mensuales (JSON Array de {month, engagement, views}):</label>
+            <textarea id="form-campaign-stats" rows="5" style="width: 100%; font-family: monospace; font-size: 0.9rem; background: var(--bg-card); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 8px;"></textarea>
+            <small>Ej: [{"month":"Ene","engagement":20000,"views":30000},{"month":"Feb",...}]</small>
+            </div>
+            <button type="submit" class="search-btn" style="margin-top: 20px;">Actualizar Gráfica de Campaña</button>
+        </form>
+
+        <div id="campaign-data" class="hidden">
+            <h3 id="campaign-name">Nombre de la campaña</h3>
+            <p class="text-secondary">Marca: <span id="campaign-brand"></span> • Fecha: <span id="campaign-date"></span></p>
+            <p>🎯 Influencers: <span id="campaign-influencers"></span></p>
+            <p>👥 Alcance Total Estimado: <span id="campaign-reach"></span></p>
+            <p>📈 ROI Estimado: <span id="campaign-roi" class="text-impact"></span></p>
+            <div class="chart-container" style="margin-top:25px; background: var(--bg-card); position: relative; height:400px; width:100%;">
+                <div class="chart-title">Rendimiento Mensual de la Campaña</div>
+                <canvas id="campaign-chart"></canvas>
+            </div>
         </div>
-      </div>
-      <p id="no-campaign-message">Actualmente no hay datos de campaña para mostrar.</p>
+        <p id="no-campaign-message">Configura los datos de la campaña usando el formulario de arriba y haz clic en "Actualizar Gráfica".</p>
     </div>
   </div>
 
