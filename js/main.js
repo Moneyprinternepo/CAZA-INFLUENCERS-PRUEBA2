@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Autenticación
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         window.location.href = 'login.html';
-        return; // Detener ejecución si no está logueado
+        return;
     }
 
     const username = localStorage.getItem('username');
@@ -15,19 +15,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('logout-btn').addEventListener('click', () => {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('username');
-        // localStorage.removeItem('userRole'); // Si lo guardaste
         window.location.href = 'login.html';
     });
 
     // Variables globales de la app
     let currentData = [];
     let filteredData = [];
-    let campaignChartInstance = null; // Renombrado para evitar conflicto con la variable global Chart
+    let campaignChartInstance = null;
     let csvLoaded = false;
 
-    // Datos de campaña de ejemplo (podría venir de un CSV/API en el futuro)
-    const sampleCampaign = {
-        id: 1, name: "Dinosaurios de la Patagonia", brand: "Caixa", date: "2025-03-10", influencer_ids: [1, 2, 5], // Usar IDs de influencers.csv
+    let currentCampaignData = { // Datos de campaña por defecto / iniciales
+        id: 1, name: "Dinosaurios de la Patagonia", brand: "Caixa", date: "2025-03-10", influencer_ids: ["1","2"], // IDs como strings para coincidir con CSV
         roi: 2.3,
         stats: [
             { month: 'Ene', engagement: 20000, views: 30000 }, { month: 'Feb', engagement: 10000, views: 12000 },
@@ -40,152 +38,124 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Elementos del DOM
-    const tabs = document.querySelectorAll('.tab');
-    const exploreView = document.getElementById('explore-view');
-    const campaignView = document.getElementById('campaign-view');
-    const resultsContainer = document.getElementById('results-container');
-    const loader = document.getElementById('loader');
-    const noResultsMessage = document.getElementById('no-results-message');
+    const tabsNodeList = document.querySelectorAll('.tab'); // Renombrado para evitar conflicto
+    const exploreViewDiv = document.getElementById('explore-view'); // Renombrado
+    const campaignViewDiv = document.getElementById('campaign-view'); // Renombrado
+    const resultsContainerDiv = document.getElementById('results-container'); // Renombrado
+    const loaderDiv = document.getElementById('loader'); // Renombrado
+    const noResultsMessageP = document.getElementById('no-results-message'); // Renombrado
     
-    const platformFilter = document.getElementById('platform-filter');
-    const followersFilter = document.getElementById('followers-filter');
-    const tag1Filter = document.getElementById('tag1-filter');
-    const tag2Filter = document.getElementById('tag2-filter');
-    const searchInput = document.getElementById('search-input');
-    const searchBtn = document.getElementById('search-btn');
+    const platformFilterSelect = document.getElementById('platform-filter'); // Renombrado
+    const followersFilterSelect = document.getElementById('followers-filter'); // Renombrado
+    const tag1FilterSelect = document.getElementById('tag1-filter'); // Renombrado
+    const tag2FilterSelect = document.getElementById('tag2-filter'); // Renombrado
+    const searchInputEl = document.getElementById('search-input'); // Renombrado
+    const searchBtnEl = document.getElementById('search-btn'); // Renombrado
 
-    // --- UTILIDADES ---
-    const calculateImpact = influencer => {
-        if (influencer.followers === 0) return 0; // Evitar división por cero
-        return ((influencer.likesAvg / influencer.followers + influencer.commentsAvg / influencer.followers) * 100 * 1.2).toFixed(2);
-    }
+    const campaignFormEl = document.getElementById('campaign-form'); // Renombrado
+    const formCampaignStatsTextareaEl = document.getElementById('form-campaign-stats'); // Renombrado
 
-    function populateTagFilters() {
-        tag1Filter.length = 1; // Limpia opciones previas excepto "Todos"
-        tag2Filter.length = 1;
+
+    function initializeCampaignForm() {
+        document.getElementById('form-campaign-name').value = currentCampaignData.name;
+        document.getElementById('form-campaign-brand').value = currentCampaignData.brand;
         
-        const allNiches = currentData.flatMap(item => {
-            if (Array.isArray(item.niche)) return item.niche;
-            if (typeof item.niche === 'string') return item.niche.split('|').map(s => s.trim());
-            return [];
-        });
-        const uniqueTags = [...new Set(allNiches)].sort();
-        
-        uniqueTags.forEach(tag => {
-            if (tag) { // Asegurarse de no añadir tags vacíos
-                const option1 = new Option(tag, tag);
-                const option2 = new Option(tag, tag);
-                tag1Filter.appendChild(option1);
-                tag2Filter.appendChild(option2);
+        // Formatear la fecha para el input type="date" que espera YYYY-MM-DD
+        let campaignDate = currentCampaignData.date;
+        if (campaignDate && campaignDate.includes('T')) { // Si es un ISO string completo
+            campaignDate = campaignDate.split('T')[0];
+        } else if (campaignDate && campaignDate.includes('/')) { // Si es DD/MM/YYYY o similar
+            const parts = campaignDate.split('/');
+            if (parts.length === 3) {
+                campaignDate = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
             }
-        });
+        } // Asumir que si no, ya está en YYYY-MM-DD
+        document.getElementById('form-campaign-date').value = campaignDate;
+
+        document.getElementById('form-campaign-influencers-ids').value = currentCampaignData.influencer_ids.join(',');
+        document.getElementById('form-campaign-roi').value = currentCampaignData.roi;
+        formCampaignStatsTextareaEl.value = JSON.stringify(currentCampaignData.stats, null, 2);
     }
-    
-    function showLoader(show) {
-        loader.classList.toggle('hidden', !show);
-    }
 
-    function applyFiltersAndSearch() {
-        if (!csvLoaded) return;
+    campaignFormEl.addEventListener('submit', (e) => {
+        e.preventDefault();
+        try {
+            const name = document.getElementById('form-campaign-name').value;
+            const brand = document.getElementById('form-campaign-brand').value;
+            const date = document.getElementById('form-campaign-date').value;
+            const influencer_ids_str = document.getElementById('form-campaign-influencers-ids').value;
+            const roi = parseFloat(document.getElementById('form-campaign-roi').value);
+            const stats_json = formCampaignStatsTextareaEl.value;
 
-        showLoader(true);
-        resultsContainer.classList.add('hidden');
-        noResultsMessage.classList.add('hidden');
+            if (!name || !brand || !date || !influencer_ids_str || isNaN(roi) || !stats_json) {
+                alert("Por favor, completa todos los campos del formulario de campaña.");
+                return;
+            }
 
-        // Simular delay para UX
-        setTimeout(() => {
-            const platform = platformFilter.value;
-            const followersRange = followersFilter.value;
-            const tag1 = tag1Filter.value;
-            const tag2 = tag2Filter.value;
-            const searchTerm = searchInput.value.toLowerCase().trim();
-
-            filteredData = currentData.filter(item => {
-                if (platform !== 'Todos' && item.platform !== platform) return false;
-
-                if (followersRange === '<100K' && item.followers >= 100000) return false;
-                if (followersRange === '100K-500K' && (item.followers < 100000 || item.followers > 500000)) return false;
-                if (followersRange === '>500K' && item.followers <= 500000) return false;
-
-                const itemNiches = Array.isArray(item.niche) ? item.niche : (typeof item.niche === 'string' ? item.niche.split('|').map(s => s.trim()) : []);
-                if (tag1 !== 'Todos' && !itemNiches.includes(tag1)) return false;
-                if (tag2 !== 'Todos' && !itemNiches.includes(tag2)) return false;
-                
-                if (searchTerm) {
-                    const nameMatch = item.name.toLowerCase().includes(searchTerm);
-                    const nicheMatch = itemNiches.some(n => n.toLowerCase().includes(searchTerm));
-                    if (!nameMatch && !nicheMatch) return false;
+            const influencer_ids = influencer_ids_str.split(',').map(id => id.trim()).filter(id => id !== "");
+            
+            let stats;
+            try {
+                stats = JSON.parse(stats_json);
+                if (!Array.isArray(stats) || !stats.every(s => s.month && typeof s.engagement === 'number' && typeof s.views === 'number')) {
+                    throw new Error("El formato de Datos Mensuales JSON es incorrecto.");
                 }
-                return true;
-            });
-            
-            displayResults();
-            showLoader(false);
-            resultsContainer.classList.remove('hidden');
-            noResultsMessage.classList.toggle('hidden', filteredData.length > 0);
-        }, 300);
-    }
+            } catch (jsonError) {
+                alert(`Error en el formato JSON de Datos Mensuales: ${jsonError.message}`);
+                return;
+            }
 
-    function displayResults() {
-        resultsContainer.innerHTML = '';
-        if (filteredData.length === 0) {
-            noResultsMessage.classList.remove('hidden');
-            return;
+            currentCampaignData = { name, brand, date, influencer_ids, roi, stats };
+            displayCampaignData(currentCampaignData);
+            alert("Datos de campaña actualizados y gráfica regenerada.");
+
+        } catch (error) {
+            alert(`Error procesando el formulario: ${error.message}`);
+            console.error("Error en formulario de campaña:", error);
         }
-        noResultsMessage.classList.add('hidden');
+    });
 
-        filteredData.forEach(item => {
-            const impact = calculateImpact(item);
-            // item.impact = impact; // Guardar para posible uso futuro, aunque ahora se pasa a métricas
-
-            const card = document.createElement('a'); // Cambiado a 'a' para navegación
-            card.className = 'result-card';
-            card.href = `influencer_metrics.html?id=${item.id}`; // Enlace a la página de métricas
-            
-            card.innerHTML = `
-                <h3>${item.name}</h3>
-                <p class="text-secondary">${item.platform}</p>
-                <p>👥 Seguidores: ${item.followers.toLocaleString()}</p>
-                <p>❤️ Likes (promedio): ${item.likesAvg.toLocaleString()}</p>
-                <p>💬 Comentarios (promedio): ${item.commentsAvg.toLocaleString()}</p>
-                <p class="text-impact">📊 Impacto Estimado: ${impact}%</p>
-            `;
-            // El evento de click ya no es necesario aquí, el 'a' se encarga.
-            resultsContainer.appendChild(card);
-        });
-    }
-
-    // --- VISTA CAMPAÑAS ---
-    function displayCampaignData() {
-        if (!csvLoaded) {
-            // Podrías poner un pequeño loader o mensaje aquí también
+    function displayCampaignData(campaignToDisplay = currentCampaignData) {
+        if (!csvLoaded && currentData.length === 0) { // Solo reintentar si currentData está vacío, no solo si csvLoaded es false (podría estar en proceso)
             document.getElementById('no-campaign-message').textContent = 'Cargando datos de influencers para la campaña...';
-            // Reintentar después de un momento si los datos de influencers no están listos
-            setTimeout(displayCampaignData, 1000); 
+            setTimeout(() => displayCampaignData(campaignToDisplay), 1000);
             return;
         }
         
+        if (!campaignToDisplay || !campaignToDisplay.stats || campaignToDisplay.stats.length === 0) {
+            document.getElementById('no-campaign-message').textContent = 'No hay datos de campaña para mostrar. Por favor, usa el formulario.';
+            document.getElementById('no-campaign-message').classList.remove('hidden');
+            document.getElementById('campaign-data').classList.add('hidden');
+            return;
+        }
+
         document.getElementById('no-campaign-message').classList.add('hidden');
         document.getElementById('campaign-data').classList.remove('hidden');
 
-        document.getElementById('campaign-name').textContent = sampleCampaign.name;
-        document.getElementById('campaign-brand').textContent = sampleCampaign.brand;
-        document.getElementById('campaign-date').textContent = new Date(sampleCampaign.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('campaign-name').textContent = campaignToDisplay.name;
+        document.getElementById('campaign-brand').textContent = campaignToDisplay.brand;
+        try {
+            // Asegurar que la fecha se parsee correctamente, asumiendo YYYY-MM-DD del input
+            const [year, month, day] = campaignToDisplay.date.split('-');
+            document.getElementById('campaign-date').textContent = new Date(year, month - 1, day).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
+        } catch (e) {
+            document.getElementById('campaign-date').textContent = campaignToDisplay.date;
+        }
 
-        const influencerNames = sampleCampaign.influencer_ids
+        const influencerNames = campaignToDisplay.influencer_ids
             .map(id => {
-                const influencer = currentData.find(i => i.id == id); // Usar '==' para comparación flexible de tipos si ID es número y CSV es string
-                return influencer ? influencer.name : 'Desconocido';
+                const influencer = currentData.find(i => String(i.id) === String(id));
+                return influencer ? influencer.name : `ID:${id} (Desconocido)`;
             })
             .join(', ');
-        document.getElementById('campaign-influencers').textContent = influencerNames;
+        document.getElementById('campaign-influencers').textContent = influencerNames || 'Ninguno especificado';
 
-        const totalReach = sampleCampaign.influencer_ids.reduce((sum, id) => {
-            const influencer = currentData.find(i => i.id == id);
-            return sum + (influencer ? influencer.followers : 0);
+        const totalReach = campaignToDisplay.influencer_ids.reduce((sum, id) => {
+            const influencer = currentData.find(i => String(i.id) === String(id));
+            return sum + (influencer && typeof influencer.followers === 'number' ? influencer.followers : 0);
         }, 0);
         document.getElementById('campaign-reach').textContent = totalReach.toLocaleString();
-        document.getElementById('campaign-roi').textContent = `${sampleCampaign.roi}x`;
+        document.getElementById('campaign-roi').textContent = `${campaignToDisplay.roi}x`;
 
         const ctx = document.getElementById('campaign-chart').getContext('2d');
         if (campaignChartInstance) {
@@ -194,38 +164,75 @@ document.addEventListener('DOMContentLoaded', () => {
         campaignChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: sampleCampaign.stats.map(s => s.month),
+                labels: campaignToDisplay.stats.map(s => s.month),
                 datasets: [{
                     label: 'Engagement',
-                    data: sampleCampaign.stats.map(s => s.engagement),
-                    borderColor: 'var(--primary)',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.3,
-                    fill: true
+                    data: campaignToDisplay.stats.map(s => s.engagement),
+                    borderColor: 'var(--primary)', backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    tension: 0.3, fill: true, pointRadius: 3, pointBackgroundColor: 'var(--primary)'
                 }, {
                     label: 'Visualizaciones',
-                    data: sampleCampaign.stats.map(s => s.views),
-                    borderColor: 'var(--success)',
-                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                    tension: 0.3,
-                    fill: true
+                    data: campaignToDisplay.stats.map(s => s.views),
+                    borderColor: 'var(--success)', backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                    tension: 0.3, fill: true, pointRadius: 3, pointBackgroundColor: 'var(--success)'
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 scales: {
                     y: { beginAtZero: true, ticks: { color: 'var(--text-secondary)' }, grid: { color: 'var(--border)' } },
                     x: { ticks: { color: 'var(--text-secondary)' }, grid: { color: 'var(--border)' } }
                 },
-                plugins: {
-                    legend: { position: 'top', labels: { color: 'var(--text)' } }
-                }
+                plugins: { legend: { position: 'top', labels: { color: 'var(--text)' } }, tooltip: { mode: 'index', intersect: false } },
+                animation: { duration: 800, easing: 'easeInOutQuart' }
             }
         });
     }
+    
+    const calculateImpact = influencer => {
+        if (!influencer || typeof influencer.followers !== 'number' || influencer.followers === 0) return '0.00';
+        const likes = Number(influencer.likesAvg) || 0;
+        const comments = Number(influencer.commentsAvg) || 0;
+        return ((likes / influencer.followers + comments / influencer.followers) * 100 * 1.2).toFixed(2);
+    };
 
-    // --- CARGA INICIAL DE DATOS (Influencers) ---
+    function populateTagFilters() {
+        tag1FilterSelect.length = 1; 
+        tag2FilterSelect.length = 1;
+        
+        // Combinar nichos de todas las columnas de nicho y asegurarse de que sean strings antes de split
+        const allNiches = currentData.flatMap(item => {
+            let niches = [];
+            if (item.niche && typeof item.niche === 'string') niches = niches.concat(item.niche.split('|').map(s => s.trim()).filter(s => s));
+            if (item['niche 2'] && typeof item['niche 2'] === 'string') niches = niches.concat(item['niche 2'].split('|').map(s => s.trim()).filter(s => s));
+            if (item['niche 3'] && typeof item['niche 3'] === 'string') niches = niches.concat(item['niche 3'].split('|').map(s => s.trim()).filter(s => s));
+            // Si tus columnas de nicho ya son arrays después del parseo, ajusta esto.
+            // Por ahora, asumimos que son strings o PapaParse podría haberlos convertido a arrays si no hay delimitador interno.
+            // Pero si el CSV tiene 'Minecraft;Videojuegos;Familiar' y el delimitador principal es ';', 'niche' será 'Minecraft', 'niche 2' será 'Videojuegos', etc.
+            // Así que vamos a asumir que las columnas son individuales.
+            const individualNiches = [];
+            if (item.niche && typeof item.niche === 'string') individualNiches.push(item.niche.trim());
+            if (item['niche 2'] && typeof item['niche 2'] === 'string') individualNiches.push(item['niche 2'].trim());
+            if (item['niche 3'] && typeof item['niche 3'] === 'string') individualNiches.push(item['niche 3'].trim());
+            return individualNiches.filter(n => n); // Solo nichos no vacíos
+        });
+
+        const uniqueTags = [...new Set(allNiches)].sort();
+        
+        uniqueTags.forEach(tag => {
+            if (tag) { 
+                const option1 = new Option(tag, tag);
+                const option2 = new Option(tag, tag);
+                tag1FilterSelect.appendChild(option1);
+                tag2FilterSelect.appendChild(option2);
+            }
+        });
+    }
+    
+    function showLoader(show) {
+        loaderDiv.classList.toggle('hidden', !show);
+    }
+
     async function loadInfluencersCsv() {
         showLoader(true);
         try {
@@ -235,98 +242,175 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return new Promise((resolve, reject) => {
                 Papa.parse(csvText, {
-                    download: false, // Ya hemos descargado con fetch
                     header: true,
-                    dynamicTyping: true, // Importante para que números sean números
+                    dynamicTyping: true,
                     skipEmptyLines: true,
-                    complete: ({ data, errors }) => {
+                    delimiter: ";", // <--- IMPORTANTE: Especificar el delimitador
+                    complete: ({ data, errors, meta }) => {
                         if (errors.length > 0) {
-                            console.warn("Errores de parseo en influencers.csv:", errors);
-                            // Decide si continuar o rechazar basado en la severidad
+                            console.warn("Errores de parseo en influencers.csv detectados:");
+                            errors.forEach(err => console.warn(`- Tipo: ${err.type}, Código: ${err.code}, Mensaje: ${err.message}, Fila: ${err.row}`));
                         }
-                        currentData = data.filter(r => r.id && r.name); // Asegurar que tengan ID y nombre
-                        
-                        // Convertir 'niche' de string a array si es necesario
+                        console.log("Campos detectados por PapaParse:", meta.fields);
+
+                        const rawDataCount = data.length;
+                        currentData = data.filter(r => {
+                            const hasId = r && (r.id !== null && r.id !== undefined && String(r.id).trim() !== "");
+                            const hasName = r && (r.name !== null && r.name !== undefined && String(r.name).trim() !== "");
+                            return hasId && hasName;
+                        });
+                        console.log(`Datos CSV: ${rawDataCount} filas crudas, ${currentData.length} filas válidas cargadas.`);
+
                         currentData.forEach(item => {
-                            if (item.niche && typeof item.niche === 'string') {
-                                item.niche = item.niche.split('|').map(s => s.trim());
-                            } else if (!item.niche) {
-                                item.niche = []; // Asegurar que sea un array
-                            }
+                            item.id = String(item.id); // ID como string consistentemente
+                            item.followers = Number(item.followers) || 0;
+                            item.likesAvg = Number(item.likesAvg) || 0;
+                            item.commentsAvg = Number(item.commentsAvg) || 0;
+                            // Para los nichos, como ahora son columnas separadas, los dejamos como están.
+                            // La función populateTagFilters y applyFiltersAndSearch se encargarán de leerlos.
                         });
 
                         csvLoaded = true;
-                        filteredData = [...currentData];
+                        filteredData = [...currentData]; // Inicializar filteredData
                         populateTagFilters();
-                        searchBtn.disabled = false;
+                        searchBtnEl.disabled = false;
                         showLoader(false);
-                        applyFiltersAndSearch(); // Carga inicial de resultados
+                        applyFiltersAndSearch();
                         resolve();
                     },
                     error: (error) => {
+                        console.error("Error de PapaParse:", error);
                         reject(error.message);
                     }
                 });
             });
         } catch (error) {
             showLoader(false);
-            resultsContainer.innerHTML = `<p style="color:var(--error); text-align:center;">Error cargando influencers.csv: ${error.message}. Por favor, revisa la consola y el archivo.</p>`;
+            resultsContainerDiv.innerHTML = `<p style="color:var(--error); text-align:center;">Error cargando influencers.csv: ${error.message}. Por favor, revisa la consola y el archivo.</p>`;
             console.error('Error crítico cargando influencers.csv:', error);
-            searchBtn.disabled = true;
+            searchBtnEl.disabled = true;
             throw error;
         }
     }
+    
+    function applyFiltersAndSearch() {
+        if (!csvLoaded) return;
 
-    // --- MANEJO DE PESTAÑAS (Tabs) ---
+        showLoader(true);
+        resultsContainerDiv.classList.add('hidden');
+        noResultsMessageP.classList.add('hidden');
+
+        setTimeout(() => {
+            const platform = platformFilterSelect.value;
+            const followersRange = followersFilterSelect.value;
+            const tag1 = tag1FilterSelect.value;
+            const tag2 = tag2FilterSelect.value;
+            const searchTerm = searchInputEl.value.toLowerCase().trim();
+
+            filteredData = currentData.filter(item => {
+                if (platform !== 'Todos' && item.platform !== platform) return false;
+
+                const followers = Number(item.followers) || 0;
+                if (followersRange === '<100K' && followers >= 100000) return false;
+                if (followersRange === '100K-500K' && (followers < 100000 || followers > 500000)) return false;
+                if (followersRange === '>500K' && followers <= 500000) return false;
+
+                // Lógica de filtrado para nichos individuales
+                const itemNichesSet = new Set();
+                if (item.niche && typeof item.niche === 'string') itemNichesSet.add(item.niche.trim());
+                if (item['niche 2'] && typeof item['niche 2'] === 'string') itemNichesSet.add(item['niche 2'].trim());
+                if (item['niche 3'] && typeof item['niche 3'] === 'string') itemNichesSet.add(item['niche 3'].trim());
+
+                if (tag1 !== 'Todos' && !itemNichesSet.has(tag1)) return false;
+                if (tag2 !== 'Todos' && !itemNichesSet.has(tag2)) return false; // Si tag2 es el mismo que tag1, el filtro es más restrictivo. Considerar si esto es deseado.
+                
+                if (searchTerm) {
+                    const nameMatch = item.name && item.name.toLowerCase().includes(searchTerm);
+                    const nicheSearchMatch = Array.from(itemNichesSet).some(n => n.toLowerCase().includes(searchTerm));
+                    if (!nameMatch && !nicheSearchMatch) return false;
+                }
+                return true;
+            });
+            
+            displayResults();
+            showLoader(false);
+            resultsContainerDiv.classList.remove('hidden');
+            noResultsMessageP.classList.toggle('hidden', filteredData.length === 0);
+        }, 300);
+    }
+    
+    function displayResults() {
+        resultsContainerDiv.innerHTML = '';
+        if (filteredData.length === 0) {
+            noResultsMessageP.classList.remove('hidden');
+            return;
+        }
+        noResultsMessageP.classList.add('hidden');
+
+        filteredData.forEach(item => {
+            const impact = calculateImpact(item);
+            
+            const card = document.createElement('a'); 
+            card.className = 'result-card';
+            // Asegurarse que item.id es un string o número válido para la URL
+            card.href = `influencer_metrics.html?id=${encodeURIComponent(String(item.id))}`; 
+            
+            card.innerHTML = `
+                <h3>${item.name || 'Nombre no disponible'}</h3>
+                <p class="text-secondary">${item.platform || 'N/A'}</p>
+                <p>👥 Seguidores: ${(Number(item.followers) || 0).toLocaleString()}</p>
+                <p>❤️ Likes (promedio): ${(Number(item.likesAvg) || 0).toLocaleString()}</p>
+                <p>💬 Comentarios (promedio): ${(Number(item.commentsAvg) || 0).toLocaleString()}</p>
+                <p class="text-impact">📊 Impacto Estimado: ${impact}%</p>
+            `;
+            resultsContainerDiv.appendChild(card);
+        });
+    }
+
     function handleTabClick(e) {
-        tabs.forEach(t => t.classList.remove('active'));
+        tabsNodeList.forEach(t => t.classList.remove('active'));
         e.target.classList.add('active');
         const selectedTab = e.target.dataset.tab;
 
+        exploreViewDiv.classList.add('hidden');
+        campaignViewDiv.classList.add('hidden');
+
         if (selectedTab === 'explorar') {
-            campaignView.classList.add('hidden');
-            exploreView.classList.remove('hidden');
-            // No es necesario recargar datos aquí a menos que la lógica cambie
+            exploreViewDiv.classList.remove('hidden');
         } else if (selectedTab === 'campanas') {
-            exploreView.classList.add('hidden');
-            campaignView.classList.remove('hidden');
-            displayCampaignData(); // Actualizar o mostrar datos de campaña
+            campaignViewDiv.classList.remove('hidden');
+            initializeCampaignForm(); 
+            displayCampaignData(currentCampaignData); 
         }
     }
     
-    // --- TESTS BÁSICOS (Opcional, para desarrollo) ---
-    function runBasicTests() {
-        console.assert(typeof Chart !== 'undefined', 'Chart.js no cargado');
-        console.assert(csvLoaded, 'CSV influencers no cargado');
-        if (currentData.length > 0) {
-            console.assert(currentData.length > 0, 'CSV vacío o no parseado correctamente');
-            const uniqueIds = new Set(currentData.map(i => i.id));
-            console.assert(uniqueIds.size === currentData.length, 'IDs duplicados en influencers.csv');
-        } else {
-            console.warn("currentData está vacío, no se pueden ejecutar tests de datos.");
-        }
-        console.log('%c✔︎ Tests básicos de main.js OK (si no hay errores arriba)', 'color:lime');
-    }
-
-    // --- INICIALIZACIÓN ---
-    searchBtn.addEventListener('click', applyFiltersAndSearch);
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            applyFiltersAndSearch();
-        }
+    // Inicialización
+    searchBtnEl.addEventListener('click', applyFiltersAndSearch);
+    searchInputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyFiltersAndSearch();
     });
-    [platformFilter, followersFilter, tag1Filter, tag2Filter].forEach(filterElement => {
+    [platformFilterSelect, followersFilterSelect, tag1FilterSelect, tag2FilterSelect].forEach(filterElement => {
         filterElement.addEventListener('change', applyFiltersAndSearch);
     });
     
-    tabs.forEach(t => t.addEventListener('click', handleTabClick));
+    tabsNodeList.forEach(t => t.addEventListener('click', handleTabClick));
 
-    // Cargar datos y luego ejecutar tests y UI
     loadInfluencersCsv()
         .then(() => {
-            runBasicTests();
-            // La UI ya se actualiza en applyFiltersAndSearch llamado desde loadInfluencersCsv
             console.log("Aplicación Caza Influencers inicializada.");
+            // Si la pestaña por defecto es campañas, o para la primera carga:
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab && activeTab.dataset.tab === 'campanas') {
+                 initializeCampaignForm();
+                 displayCampaignData(currentCampaignData);
+            } else {
+                // La vista de explorar ya se puebla a través de applyFiltersAndSearch llamado en loadInfluencersCsv
+            }
+        })
+        .catch(error => {
+            console.error("Fallo en la inicialización de la aplicación:", error);
+        });
+});
         })
         .catch(error => {
             console.error("Fallo en la inicialización de la aplicación:", error);
